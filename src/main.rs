@@ -148,6 +148,37 @@ fn save_config(config: &TasQConfig) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn update_claude_md_with_tasq_note() -> Result<(), Box<dyn std::error::Error>> {
+    let claude_md_path = Path::new("CLAUDE.md");
+    let tasq_note = "\n## TasQ MCP Usage Note\n\
+**IMPORTANT:** When using TasQ MCP tools in Claude, always specify the full project directory path instead of using the default \".\" parameter. \n\
+The auto-detection may not work correctly in all environments.\n\n\
+Example:\n\
+```\n\
+// Instead of: mcp__mcp-tasq__get_project_status()\n\
+// Use: mcp__mcp-tasq__get_project_status(project_dir=\"/full/path/to/project\")\n\
+```\n\n\
+This ensures TasQ operations target the correct project directory every time.\n\n";
+
+    if claude_md_path.exists() {
+        // Read existing content
+        let existing_content = fs::read_to_string(claude_md_path)?;
+        
+        // Check if the note already exists
+        if !existing_content.contains("## TasQ MCP Usage Note") {
+            // Append the note
+            let updated_content = format!("{}{}", existing_content, tasq_note);
+            fs::write(claude_md_path, updated_content)?;
+        }
+    } else {
+        // Create new CLAUDE.md with the note
+        let content = format!("# Project Notes\n{}", tasq_note);
+        fs::write(claude_md_path, content)?;
+    }
+    
+    Ok(())
+}
+
 fn init_project() -> Result<(), Box<dyn std::error::Error>> {
     let tasq_dir = get_tasq_dir();
     
@@ -259,9 +290,13 @@ if __name__ == \"__main__\":\n\
     println!("  `-- hooks/");
     println!("      `-- post-complete.py # Hook script for task completion");
     println!();
+    // Update CLAUDE.md with TasQ MCP usage note
+    update_claude_md_with_tasq_note()?;
+    
     println!("🚀 TasQ initialized! You can now:");
     println!("  * Run 'tasq add \"My first task\"' to add a task");
     println!("  * Run 'tasq' for the interactive TUI");
+    println!("  * CLAUDE.md has been updated with TasQ MCP usage notes");
     
     Ok(())
 }

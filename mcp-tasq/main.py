@@ -160,18 +160,32 @@ def get_next_task(project_dir: str = ".") -> str:
 @mcp.tool()
 def complete_task(task_identifier: str, project_dir: str = ".") -> str:
     """
-    Mark a task as completed.
+    Mark a task as completed and automatically return the next task.
     
     Args:
         task_identifier: Task ID or search term
         project_dir: Project directory (defaults to auto-detect nearest .tasq directory)
         
     Returns:
-        Confirmation message
+        Confirmation message with next task information
     """
     actual_project_dir = get_project_directory(project_dir)
+    
+    # Complete the task
     output = run_tasq_command(["complete", task_identifier], cwd=actual_project_dir)
-    return f"✅ {output}"
+    result = f"✅ {output}"
+    
+    # Automatically get the next task
+    try:
+        next_task_output = run_tasq_command(["next"], cwd=actual_project_dir)
+        if next_task_output:
+            result += f"\n\n⏭️ **Next task:**\n{next_task_output}"
+        else:
+            result += f"\n\n🎉 All tasks completed! Great work!"
+    except Exception as e:
+        result += f"\n\n⚠️ Could not fetch next task: {str(e)}"
+    
+    return result
 
 @mcp.tool()
 def set_task_priority(task_identifier: str, priority: int, project_dir: str = ".") -> str:
