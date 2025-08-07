@@ -1,33 +1,20 @@
 # TasQ - Terminal Task Manager
 
-A powerful, lightweight task management system with both Terminal User Interface (TUI) and Command Line Interface (CLI) capabilities. Perfect for project-based task management with per-directory task databases.
+A powerful, lightweight task management system with both Terminal User Interface (TUI) and Command Line Interface (CLI) capabilities. Features per-project task databases and seamless integration with Claude through MCP (Model Context Protocol).
 
-## Features
+## 🚀 Features
 
 - 🎯 **Dual Interface**: Rich TUI for interactive management, CLI for automation
-- 📁 **Per-Directory Tasks**: Each directory maintains its own task database
+- 📁 **Per-Project Tasks**: Each project maintains its own `.tasq` directory with isolated task database
 - ⚡ **Priority System**: 5-level priority system with visual indicators
+- 🤖 **Claude Integration**: MCP server for AI-assisted task management
 - ✅ **Task Completion**: Mark tasks complete with visual strikethrough
 - 🔍 **Task Details**: Comprehensive task information in modal view
 - 🗂️ **SQLite Backend**: Reliable local database storage
 - 🎨 **Color-Coded**: Priority-based color coding for quick visual scanning
+- 🔄 **Auto-Discovery**: MCP server automatically detects nearest `.tasq` directory
 
-## Installation
-
-### Quick Install (Recommended)
-
-```bash
-curl -sSL https://raw.githubusercontent.com/yourusername/tasq/main/install.sh | bash
-```
-
-### Manual Installation
-
-1. Download the latest release binary:
-```bash
-curl -L -o tasq https://github.com/yourusername/tasq/releases/latest/download/tasq
-chmod +x tasq
-sudo mv tasq /usr/local/bin/
-```
+## 📦 Installation
 
 ### Build from Source
 
@@ -36,15 +23,37 @@ sudo mv tasq /usr/local/bin/
 
 **Build steps:**
 ```bash
-git clone https://github.com/yourusername/tasq.git
+git clone https://github.com/arcalumis/tasq.git
 cd tasq
 cargo build --release
 sudo cp target/release/tasq /usr/local/bin/
 ```
 
-## Usage
+## 🏃 Quick Start
 
-### Command Line Interface (CLI)
+### 1. Initialize a Project
+```bash
+cd your-project-directory
+tasq init
+```
+
+This creates a `.tasq/` directory with:
+- `config.json` - Project configuration
+- `hooks/` - Post-completion hook scripts
+
+### 2. Add Tasks
+```bash
+tasq add "Implement user authentication" --priority 1
+tasq add "Write documentation" --priority 3
+tasq add "Setup CI/CD pipeline" --priority 2
+```
+
+### 3. Use Interactive TUI
+```bash
+tasq
+```
+
+## 💻 Command Line Interface (CLI)
 
 ```bash
 # Add a new task
@@ -71,7 +80,7 @@ tasq set-priority 5 1  # Set task 5 to priority 1 (urgent)
 tasq set-priority "auth" 2  # Set task containing "auth" to priority 2
 ```
 
-### Terminal User Interface (TUI)
+## 🖥️ Terminal User Interface (TUI)
 
 Launch the interactive TUI by running `tasq` without arguments:
 
@@ -79,7 +88,7 @@ Launch the interactive TUI by running `tasq` without arguments:
 tasq
 ```
 
-#### TUI Controls
+### TUI Controls
 
 **Navigation:**
 - `↑/k` - Previous task
@@ -99,7 +108,7 @@ tasq
 - `c` - Toggle between showing all tasks and pending only
 - `q` - Quit
 
-#### Priority System
+### Priority System
 
 Tasks use a 5-level priority system:
 
@@ -111,9 +120,69 @@ Tasks use a 5-level priority system:
 | 4        | Blue   | !!        | Low         |
 | 5        | Gray   | !         | Very Low    |
 
-## Database Structure
+## 🤖 Claude Desktop Integration
 
-TasQ uses SQLite databases stored as `tasks.db` in each directory where you run the command. This enables project-specific task management.
+TasQ includes an MCP server that integrates with Claude Desktop, allowing you to manage tasks through AI conversation.
+
+### Setup Instructions
+
+1. **Install the MCP Server Dependencies**:
+   ```bash
+   cd /path/to/tasq/mcp-tasq
+   uv sync
+   ```
+
+2. **Add to Claude Desktop Configuration**:
+
+   Open your Claude Desktop config file:
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+   Add the TasQ MCP server:
+   ```json
+   {
+     "mcpServers": {
+       "mcp-tasq": {
+         "command": "uv",
+         "args": ["run", "--directory", "/path/to/tasq/mcp-tasq", "main.py"]
+       }
+     }
+   }
+   ```
+
+   Replace `/path/to/tasq` with the actual path where you cloned/installed TasQ.
+
+4. **Restart Claude Desktop** to load the new configuration.
+
+### MCP Server Features
+
+The MCP server automatically detects the nearest `.tasq` directory from your current working directory, enabling:
+
+- **Multi-Project Support**: Works with any project that has been initialized with `tasq init`
+- **Auto-Discovery**: Finds the correct `.tasq` directory by walking up the directory tree
+- **Task Management**: Add, list, complete, and prioritize tasks through Claude
+- **Status Overview**: Get project task summaries and statistics
+- **UI Guidance**: Instructions for opening the TUI interface
+
+### Example Claude Interactions
+
+```
+You: "Add a high priority task to implement user authentication"
+Claude: ✅ Task added: Implement user authentication (priority: 2)
+
+You: "What's my next task?"
+Claude: ⏭️ Next task: [1] !!!!! Implement user authentication
+
+You: "List all my pending tasks"
+Claude: 📋 Tasks:
+○ [1] !!!!! Implement user authentication  
+○ [2] !!! Write documentation
+○ [3] !! Setup CI/CD pipeline
+```
+
+## 🗂️ Database Structure
+
+TasQ uses SQLite databases stored in `.tasq/tasks.db` in each project directory. This enables project-specific task management with complete isolation.
 
 ### Schema
 
@@ -129,134 +198,84 @@ CREATE TABLE tasks (
 );
 ```
 
-### Data Flow
+### Configuration
 
-1. **Creation**: Tasks are inserted with timestamp and position
-2. **Ordering**: Tasks are ordered by: completion status → priority → position → creation time
-3. **Updates**: Priority and completion changes update the database immediately
-4. **Persistence**: All changes are immediately written to SQLite
+The `.tasq/config.json` file contains project settings:
 
-## Project Integration
+```json
+{
+  "database_path": ".tasq/tasks.db",
+  "mcp_server_port": 8080,
+  "hooks_enabled": true,
+  "auto_next_task": true,
+  "claude_md_path": "CLAUDE.md"
+}
+```
 
-Since TasQ creates per-directory databases, you can:
+## 🔄 Hooks System
 
-- Run `tasq` in any project directory
-- Each project maintains its own task list
-- Switch between projects seamlessly
-- Use in automation scripts and CI/CD pipelines
+TasQ supports post-completion hooks that run when tasks are marked as complete:
 
-## MCP Server Integration
+- **Hook Location**: `.tasq/hooks/post-complete.py`
+- **Automatic Execution**: Runs when tasks are completed
+- **Claude Integration**: Updates `CLAUDE.md` with next task information
+- **Customizable**: Modify hooks for your workflow
 
-TasQ includes an MCP (Model Context Protocol) server for integration with Claude and other AI assistants. See the `mcp-tasq/` directory for setup instructions.
+## 📁 Project Structure
 
-## License
+After running `tasq init`, your project will have:
 
-MIT License
+```
+your-project/
+├── .tasq/
+│   ├── config.json         # Project configuration
+│   ├── tasks.db             # Task database (created on first use)
+│   └── hooks/
+│       └── post-complete.py # Hook script for task completion
+├── CLAUDE.md               # AI assistant instructions (optional)
+└── ... (your project files)
+```
 
-Copyright (c) 2024
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Installation Script
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-For easy installation, save this as `install.sh`:
+## 📄 License
 
-```bash
-#!/bin/bash
-set -e
+MIT License - see the [LICENSE](LICENSE) file for details.
 
-# TasQ Installation Script
-echo "Installing TasQ..."
+## 🆘 Troubleshooting
 
-# Detect OS and architecture
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-ARCH=$(uname -m)
+### MCP Server Issues
 
-case $ARCH in
-    x86_64)
-        ARCH="x86_64"
-        ;;
-    arm64|aarch64)
-        ARCH="aarch64"
-        ;;
-    *)
-        echo "Unsupported architecture: $ARCH"
-        exit 1
-        ;;
-esac
+If you get "No module named 'fastmcp'" errors:
 
-# Download URL (update with actual GitHub release URL)
-DOWNLOAD_URL="https://github.com/yourusername/tasq/releases/latest/download/tasq-${OS}-${ARCH}"
+1. Ensure you've run `uv sync` in the `mcp-tasq` directory
+2. Use the `--directory` flag in your Claude Desktop config as shown above
+3. Verify Python version is 3.10+ (check with `python3 --version`)
 
-# Create temporary directory
-TEMP_DIR=$(mktemp -d)
-cd "$TEMP_DIR"
+### Task Database Issues
 
-# Download binary
-echo "Downloading TasQ..."
-if command -v curl >/dev/null 2>&1; then
-    curl -L -o tasq "$DOWNLOAD_URL"
-elif command -v wget >/dev/null 2>&1; then
-    wget -O tasq "$DOWNLOAD_URL"
-else
-    echo "Error: curl or wget is required"
-    exit 1
-fi
+If tasks aren't persisting:
+1. Check that you have write permissions in the project directory
+2. Run `tasq init` to reinitialize the `.tasq` directory
+3. Verify the `.tasq/tasks.db` file is being created
 
-# Make executable
-chmod +x tasq
+### TUI Display Issues
 
-# Install to system
-if [ -w "/usr/local/bin" ]; then
-    mv tasq /usr/local/bin/
-    echo "TasQ installed to /usr/local/bin/tasq"
-elif [ -w "$HOME/.local/bin" ]; then
-    mkdir -p "$HOME/.local/bin"
-    mv tasq "$HOME/.local/bin/"
-    echo "TasQ installed to $HOME/.local/bin/tasq"
-    echo "Make sure $HOME/.local/bin is in your PATH"
-else
-    echo "Installing to /usr/local/bin (requires sudo)..."
-    sudo mv tasq /usr/local/bin/
-    echo "TasQ installed to /usr/local/bin/tasq"
-fi
+If the TUI doesn't display properly:
+1. Ensure your terminal supports color and UTF-8
+2. Try resizing your terminal window
+3. Check that you're running in a proper TTY (not redirected output)
 
-# Cleanup
-cd /
-rm -rf "$TEMP_DIR"
+## 🔗 Related Projects
 
-# Verify installation
-if command -v tasq >/dev/null 2>&1; then
-    echo "✅ Installation successful!"
-    echo "Run 'tasq --help' to get started"
-else
-    echo "❌ Installation failed. Please check your PATH"
-    exit 1
-fi
-```
-
-Make it executable and run:
-```bash
-chmod +x install.sh
-./install.sh
-```
+- [FastMCP](https://github.com/jlowin/fastmcp) - Fast MCP server framework
+- [Model Context Protocol](https://modelcontextprotocol.io/) - Protocol specification
+- [Claude Desktop](https://claude.ai/desktop) - AI assistant with MCP support

@@ -165,20 +165,6 @@ fn init_project() -> Result<(), Box<dyn std::error::Error>> {
     let config = TasQConfig::default();
     save_config(&config)?;
     
-    // Copy updated MCP server template
-    let mcp_server_content = include_str!("../mcp-tasq/main.py");
-    fs::write(tasq_dir.join("mcp-server.py"), mcp_server_content)?;
-    
-    // Create pyproject.toml for MCP server dependencies
-    let pyproject_content = r#"[project]
-name = "mcp-tasq-server"
-version = "0.1.0"
-description = "TasQ MCP Server for project-specific task management"
-requires-python = ">=3.10"
-dependencies = [
-    "fastmcp>=2.11.2",
-]"#;
-    fs::write(tasq_dir.join("pyproject.toml"), pyproject_content)?;
     
     // Create sample hook - write it using a simpler approach
     let hook_path = tasq_dir.join("hooks").join("post-complete.py");
@@ -264,22 +250,18 @@ if __name__ == \"__main__\":\n\
     
     println!("✅ Created .tasq/ directory structure");
     println!("✅ Created config.json with default settings");
-    println!("✅ Created MCP server template");
     println!("✅ Created post-completion hook script");
     println!();
     println!("📁 Project structure:");
     println!("  .tasq/");
     println!("  |-- config.json         # Project configuration");
-    println!("  |-- pyproject.toml       # MCP server dependencies");
     println!("  |-- tasks.db             # Task database (created on first use)");
-    println!("  |-- mcp-server.py        # MCP server for this project");
     println!("  `-- hooks/");
     println!("      `-- post-complete.py # Hook script for task completion");
     println!();
     println!("🚀 TasQ initialized! You can now:");
     println!("  * Run 'tasq add \"My first task\"' to add a task");
     println!("  * Run 'tasq' for the interactive TUI");
-    println!("  * Start MCP server: 'cd .tasq && python mcp-server.py'");
     
     Ok(())
 }
