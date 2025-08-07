@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 
 
 #[derive(Parser)]
-#[command(name = "task-manager")]
+#[command(name = "tasq")]
 #[command(about = "A terminal task manager with TUI and CLI interfaces")]
 struct Cli {
     #[command(subcommand)]
