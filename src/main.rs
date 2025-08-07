@@ -169,6 +169,17 @@ fn init_project() -> Result<(), Box<dyn std::error::Error>> {
     let mcp_server_content = include_str!("../mcp-tasq/main.py");
     fs::write(tasq_dir.join("mcp-server.py"), mcp_server_content)?;
     
+    // Create pyproject.toml for MCP server dependencies
+    let pyproject_content = r#"[project]
+name = "mcp-tasq-server"
+version = "0.1.0"
+description = "TasQ MCP Server for project-specific task management"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=2.11.2",
+]"#;
+    fs::write(tasq_dir.join("pyproject.toml"), pyproject_content)?;
+    
     // Create sample hook - write it using a simpler approach
     let hook_path = tasq_dir.join("hooks").join("post-complete.py");
     let hook_content = "#!/usr/bin/env python3\n\
@@ -259,6 +270,7 @@ if __name__ == \"__main__\":\n\
     println!("📁 Project structure:");
     println!("  .tasq/");
     println!("  |-- config.json         # Project configuration");
+    println!("  |-- pyproject.toml       # MCP server dependencies");
     println!("  |-- tasks.db             # Task database (created on first use)");
     println!("  |-- mcp-server.py        # MCP server for this project");
     println!("  `-- hooks/");
