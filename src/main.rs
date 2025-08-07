@@ -165,7 +165,7 @@ fn init_project() -> Result<(), Box<dyn std::error::Error>> {
     let config = TasQConfig::default();
     save_config(&config)?;
     
-    // Copy MCP server template
+    // Copy updated MCP server template
     let mcp_server_content = include_str!("../mcp-tasq/main.py");
     fs::write(tasq_dir.join("mcp-server.py"), mcp_server_content)?;
     
